@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Explore{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">The Archive</h1>
+  <p class="page-subtitle">Browse and continue stories written by the community</p>
+</div>
+
+<!-- Filters -->
+<form method="get" action="{{ url_for('stories.explore') }}" class="filter-bar">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search titles and text…" class="filter-search">
+
+  <select name="kind" class="filter-select">
+    <option value="all" {% if kind_filter=='all' %}selected{% endif %}>All passages</option>
+    <option value="opening" {% if kind_filter=='opening' %}selected{% endif %}>Openings</option>
+    <option value="continuation" {% if kind_filter=='continuation' %}selected{% endif %}>Continuations</option>
+    <option value="ending" {% if kind_filter=='ending' %}selected{% endif %}>Endings</option>
+  </select>
+
+  <select name="genre" class="filter-select">
+    <option value="">All genres</option>
+    {% for g in genres %}
+      <option value="{{ g }}" {% if genre_filter==g %}selected{% endif %}>{{ g }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="sort" class="filter-select">
+    <option value="newest" {% if sort_by=='newest' %}selected{% endif %}>Newest</option>
+    <option value="popular" {% if sort_by=='popular' %}selected{% endif %}>Most liked</option>
+    <option value="most_read" {% if sort_by=='most_read' %}selected{% endif %}>Most read</option>
+    <option value="most_branched" {% if sort_by=='most_branched' %}selected{% endif %}>Most branched</option>
+  </select>
+
+  <button type="submit" class="btn-primary btn-sm">Search</button>
+  {% if q or kind_filter != 'opening' or genre_filter or sort_by != 'newest' %}
+    <a href="{{ url_for('stories.explore') }}" class="btn-ghost btn-sm">Clear</a>
+  {% endif %}
+</form>
+
+<!-- Story grid -->
+{% if stories %}
+<div class="story-grid">
+  {% for s in stories %}
+  <article class="story-card">
+    <div class="card-top">
+      <div class="card-meta">
+        <span class="kind-badge kind-{{ s.kind }}">{{ s.kind_label }}</span>
+        <span class="genre-tag">{{ s.genre }}</span>
+      </div>
+      {% if s.is_ending %}<div class="ending-ribbon">Ending</div>{% endif %}
+    </div>
+
+    <h2 class="card-title">
+      <a href="{{ url_for('stories.view', story_id=s.id) }}">{{ s.title }}</a>
+    </h2>
+    <p class="card-author">by {{ s.author_name }}</p>
+
+    <blockquote class="card-excerpt">{{ s.excerpt }}</blockquote>
+
+    {% if s.tags %}
+    <div class="card-tags">
+      {% for t in s.tags[:4] %}
+        <span class="tag-chip">{{ t }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card-footer">
+      <span title="likes">♥ {{ s.like_count }}</span>
+      <span title="views">👁 {{ s.view_count }}</span>
+      <span title="branches">⸗ {{ s.branch_count }}</span>
+      <span class="card-age">{{ s.age }}</span>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <p>No passages found. {% if q %}Try a different search term.{% else %}<a href="{{ url_for('stories.write') }}">Write the first one.</a>{% endif %}</p>
+</div>
+{% endif %}
+{% endblock %}

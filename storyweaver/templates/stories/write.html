@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Write{% endblock %}
+
+{% block content %}
+<div class="write-layout">
+  <div class="write-panel">
+    <h1 class="write-title">Begin a New Story</h1>
+    <p class="write-subtitle">Write an opening passage. Others can continue it.</p>
+
+    <form method="post" action="{{ url_for('stories.write') }}" novalidate id="write-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="field{% if errors.title %} has-error{% endif %}">
+        <label for="title">Story Title</label>
+        <input id="title" name="title" type="text" placeholder="Give your story a title"
+               value="{{ form_data.title if form_data else '' }}" required maxlength="120">
+        {% if errors.title %}<span class="field-error">{{ errors.title }}</span>{% endif %}
+      </div>
+
+      <div class="field{% if errors.text %} has-error{% endif %}">
+        <label for="text">
+          Opening Passage
+          <span class="word-counter" id="word-counter">0 words</span>
+        </label>
+        <textarea id="text" name="text" rows="12" required
+                  placeholder="Write your opening passage here (20–5,000 characters)…"
+                  data-draft="write">{{ form_data.text if form_data else '' }}</textarea>
+        <div class="counter-bar" id="counter-bar">
+          <span id="counter-label"></span>
+        </div>
+        {% if errors.text %}<span class="field-error">{{ errors.text }}</span>{% endif %}
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="genre">Genre</label>
+          <select id="genre" name="genre" required>
+            {% for g in genres %}
+              <option value="{{ g }}" {% if (form_data and form_data.genre == g) %}selected{% endif %}>{{ g }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="visibility">Visibility</label>
+          <select id="visibility" name="visibility">
+            <option value="public" {% if not form_data or form_data.visibility == 'public' %}selected{% endif %}>Public</option>
+            <option value="private" {% if form_data and form_data.visibility == 'private' %}selected{% endif %}>Private</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="tags">Tags <span class="field-hint">(comma-separated, optional)</span></label>
+        <input id="tags" name="tags" type="text" placeholder="mystery, sea, winter"
+               value="{{ form_data.tags if form_data else '' }}" maxlength="200">
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Publish opening</button>
+        <a href="{{ url_for('stories.explore') }}" class="btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  {% if prompts %}
+  <aside class="write-sidebar">
+    <div class="sidebar-card">
+      <h3 class="sidebar-heading">✦ Writing Prompts</h3>
+      <p class="sidebar-hint">Need a spark? Try one of these.</p>
+      {% for p in prompts %}
+      <div class="prompt-card" data-prompt="{{ p.text }}">
+        <span class="prompt-genre">{{ p.genre }}</span>
+        <p class="prompt-text">{{ p.text }}</p>
+        <button type="button" class="btn-ghost btn-xs use-prompt">Use this prompt</button>
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ error.code }} · {{ error.name }}{% endblock %}
+
+{% block content %}
+<div class="empty-state error-page">
+  <p class="footer-ornament">— ✦ —</p>
+  <h1 class="page-title">{{ error.code }} · {{ error.name }}</h1>
+  <p>
+    {% if error.code == 404 %}This page has slipped out of the archive.
+    {% elif error.code == 403 %}You don't have permission to do that.
+    {% else %}{{ error.description }}{% endif %}
+  </p>
+  <p><a href="{{ url_for('home.index') }}" class="btn-ghost">Return home</a></p>
+</div>
+{% endblock %}

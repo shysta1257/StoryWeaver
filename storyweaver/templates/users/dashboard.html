@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Your Dashboard</h1>
+</div>
+
+<div class="tab-bar">
+  <a href="{{ url_for('users.dashboard') }}?tab=mine" class="tab {% if tab=='mine' %}tab-active{% endif %}">
+    My Stories <span class="tab-count">{{ my_stories|length }}</span>
+  </a>
+  <a href="{{ url_for('users.dashboard') }}?tab=bookmarks" class="tab {% if tab=='bookmarks' %}tab-active{% endif %}">
+    Bookmarks <span class="tab-count">{{ bookmarks|length }}</span>
+  </a>
+  <a href="{{ url_for('users.dashboard') }}?tab=feed" class="tab {% if tab=='feed' %}tab-active{% endif %}">
+    Feed <span class="tab-count">{{ feed|length }}</span>
+  </a>
+  <a href="{{ url_for('users.dashboard') }}?tab=waiting" class="tab {% if tab=='waiting' %}tab-active{% endif %}">
+    Waiting for you <span class="tab-count">{{ waiting|length }}</span>
+  </a>
+</div>
+
+<div class="tab-content">
+
+  {% if tab == 'mine' %}
+  <div class="story-list">
+    {% if my_stories %}
+      {% for s in my_stories %}
+      <div class="story-row">
+        <div class="story-row-left">
+          <span class="kind-badge kind-{{ s.kind }}">{{ s.kind_label }}</span>
+          {% if s.is_public %}
+            <span class="vis-badge vis-public">Public</span>
+          {% else %}
+            <span class="vis-badge vis-private">Private</span>
+          {% endif %}
+          <a href="{{ url_for('stories.view', story_id=s.id) }}" class="story-row-title">{{ s.title }}</a>
+        </div>
+        <div class="story-row-right">
+          <span>♥ {{ s.like_count }}</span>
+          <span>👁 {{ s.view_count }}</span>
+          <span>⸗ {{ s.branch_count }}</span>
+          <a href="{{ url_for('stories.edit', story_id=s.id) }}" class="btn-ghost btn-xs">Edit</a>
+          <span class="story-row-age">{{ s.age }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="empty-state">You haven't written anything yet. <a href="{{ url_for('stories.write') }}">Start a story.</a></p>
+    {% endif %}
+  </div>
+
+  {% elif tab == 'bookmarks' %}
+  <div class="story-list">
+    {% if bookmarks %}
+      {% for s in bookmarks %}
+      <div class="story-row">
+        <div class="story-row-left">
+          <span class="kind-badge kind-{{ s.kind }}">{{ s.kind_label }}</span>
+          <a href="{{ url_for('stories.view', story_id=s.id) }}" class="story-row-title">{{ s.title }}</a>
+          <span class="story-row-author">by {{ s.author_name }}</span>
+        </div>
+        <div class="story-row-right">
+          <span>♥ {{ s.like_count }}</span>
+          <button class="btn-ghost btn-xs save-btn saved" data-story-id="{{ s.id }}" data-action="save">
+            ★ Remove
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="empty-state">No bookmarks yet. Save passages while reading to find them here.</p>
+    {% endif %}
+  </div>
+
+  {% elif tab == 'feed' %}
+  <div class="story-list">
+    {% if feed %}
+      {% for s in feed %}
+      <div class="story-row">
+        <div class="story-row-left">
+          <span class="kind-badge kind-{{ s.kind }}">{{ s.kind_label }}</span>
+          <a href="{{ url_for('stories.view', story_id=s.id) }}" class="story-row-title">{{ s.title }}</a>
+          <span class="story-row-author">by {{ s.author_name }}</span>
+        </div>
+        <div class="story-row-right">
+          <span class="story-row-age">{{ s.age }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="empty-state">Your feed is empty. <a href="{{ url_for('stories.explore') }}">Find writers to follow.</a></p>
+    {% endif %}
+  </div>
+
+  {% elif tab == 'waiting' %}
+  <p class="tab-hint">These are your public passages that haven't been continued yet.</p>
+  <div class="story-list">
+    {% if waiting %}
+      {% for s in waiting %}
+      <div class="story-row">
+        <div class="story-row-left">
+          <span class="kind-badge kind-{{ s.kind }}">{{ s.kind_label }}</span>
+          <a href="{{ url_for('stories.view', story_id=s.id) }}" class="story-row-title">{{ s.title }}</a>
+        </div>
+        <div class="story-row-right">
+          <span>♥ {{ s.like_count }}</span>
+          <a href="{{ url_for('stories.continue_story', story_id=s.id) }}" class="btn-primary btn-xs">Continue yours</a>
+          <span class="story-row-age">{{ s.age }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="empty-state">All your passages have been continued. Well done!</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div><!-- .tab-content -->
+{% endblock %}

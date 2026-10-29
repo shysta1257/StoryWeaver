@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="home-layout">
+
+  <!-- Hero -->
+  <section class="hero-section">
+    {% if hero %}
+    <div class="hero-arch">
+      <div class="hero-label">Opening passage</div>
+      <h2 class="hero-title">{{ hero.title }}</h2>
+      <div class="hero-author">by {{ hero.author_name }}</div>
+      <div class="hero-genre tag-chip">{{ hero.genre }}</div>
+      <blockquote class="hero-text">{{ hero.excerpt }}</blockquote>
+      <div class="hero-actions">
+        <a href="{{ url_for('stories.view', story_id=hero.id) }}" class="btn-primary">Read & Continue</a>
+        <a href="{{ url_for('stories.tree', story_id=hero.id) }}" class="btn-ghost">View Story Tree</a>
+      </div>
+    </div>
+
+    {% if hero_continuations %}
+    <div class="hero-branches">
+      <p class="branches-label">This story branches {{ hero_branch_total }} way{{ 's' if hero_branch_total != 1 else '' }}…</p>
+      <div class="branch-pills">
+        {% for c in hero_continuations[:3] %}
+        <a href="{{ url_for('stories.view', story_id=c.id) }}" class="branch-pill">
+          <span class="branch-letter">{{ loop.index | upper_alpha }}</span>
+          <span class="branch-text">{{ c.first_line }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="hero-arch hero-empty">
+      <p>No stories yet. <a href="{{ url_for('stories.write') }}">Be the first to write one.</a></p>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Sidebar -->
+  <aside class="home-sidebar">
+
+    <div class="sidebar-card">
+      <h3 class="sidebar-heading">✦ Explore</h3>
+      <ul class="sidebar-links">
+        <li><a href="{{ url_for('stories.explore') }}">All stories</a></li>
+        <li><a href="{{ url_for('stories.explore') }}?kind=opening">Openings only</a></li>
+        <li><a href="{{ url_for('stories.explore') }}?kind=ending">Endings only</a></li>
+        <li><a href="{{ url_for('stories.random_opening') }}">🎲 Random opening</a></li>
+      </ul>
+    </div>
+
+    {% if current_user %}
+    <div class="sidebar-card">
+      <h3 class="sidebar-heading">✦ Your Space</h3>
+      <ul class="sidebar-links">
+        <li><a href="{{ url_for('stories.write') }}">+ Start a story</a></li>
+        <li><a href="{{ url_for('users.dashboard') }}">Dashboard</a></li>
+        <li><a href="{{ url_for('users.dashboard') }}?tab=waiting">Waiting for you ({{ waiting_count }})</a></li>
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if recent %}
+    <div class="sidebar-card">
+      <h3 class="sidebar-heading">✦ Recently Continued</h3>
+      {% for s in recent %}
+      <div class="sidebar-story">
+        <a href="{{ url_for('stories.view', story_id=s.id) }}" class="sidebar-story-title">{{ s.title }}</a>
+        <span class="sidebar-story-meta">by {{ s.author_name }} · {{ s.age }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="sidebar-card stats-card">
+      <h3 class="sidebar-heading">✦ The Archive</h3>
+      <div class="site-stats">
+        <div class="stat"><span class="stat-num">{{ stats.openings }}</span><span class="stat-label">Stories</span></div>
+        <div class="stat"><span class="stat-num">{{ stats.passages }}</span><span class="stat-label">Passages</span></div>
+        <div class="stat"><span class="stat-num">{{ stats.writers }}</span><span class="stat-label">Writers</span></div>
+      </div>
+    </div>
+
+  </aside>
+</div>
+{% endblock %}

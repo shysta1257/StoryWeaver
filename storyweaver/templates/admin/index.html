@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Admin · Reports{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+  <h1 class="page-title">Moderation Queue</h1>
+
+  <div class="admin-tabs">
+    <a href="{{ url_for('admin.index') }}" class="tab tab-active">Reports ({{ reported|length }})</a>
+    <a href="{{ url_for('admin.users') }}" class="tab">Users</a>
+  </div>
+
+  <section>
+    <h2 class="admin-section-heading">Reported Passages</h2>
+    {% if reported %}
+    <div class="admin-list">
+      {% for s in reported %}
+      <div class="admin-row {% if s.status == 'hidden' %}admin-row-hidden{% endif %}">
+        <div class="admin-row-info">
+          <span class="kind-badge kind-{{ s.kind }}">{{ s.kind }}</span>
+          <a href="{{ url_for('stories.view', story_id=s._id|string) }}" class="admin-story-title">{{ s.title }}</a>
+          <span class="admin-story-author">by {{ s.author_name }}</span>
+          <span class="admin-report-count">{{ s.reported_by|length }} report{{ 's' if s.reported_by|length != 1 else '' }}</span>
+        </div>
+        <div class="admin-row-actions">
+          {% if s.status != 'hidden' %}
+          <form method="post" action="{{ url_for('admin.hide_story', story_id=s._id|string) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-danger btn-sm">Hide</button>
+          </form>
+          {% else %}
+          <span class="status-badge status-hidden">Hidden</span>
+          <form method="post" action="{{ url_for('admin.unhide_story', story_id=s._id|string) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-ghost btn-sm">Restore</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">No reports. The archive is peaceful.</p>
+    {% endif %}
+  </section>
+
+  <section style="margin-top: 2rem;">
+    <h2 class="admin-section-heading">Hidden Passages</h2>
+    {% if hidden %}
+    <div class="admin-list">
+      {% for s in hidden %}
+      <div class="admin-row admin-row-hidden">
+        <div class="admin-row-info">
+          <span class="kind-badge kind-{{ s.kind }}">{{ s.kind }}</span>
+          <a href="{{ url_for('stories.view', story_id=s._id|string) }}" class="admin-story-title">{{ s.title }}</a>
+          <span class="admin-story-author">by {{ s.author_name }}</span>
+        </div>
+        <div class="admin-row-actions">
+          <form method="post" action="{{ url_for('admin.unhide_story', story_id=s._id|string) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-ghost btn-sm">Restore</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">No hidden passages.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

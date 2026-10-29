@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ profile_user.username }}{% endblock %}
+
+{% block content %}
+<div class="profile-layout">
+  <div class="profile-main">
+
+    <div class="profile-header">
+      <div class="profile-avatar">{{ profile_user.username[0].upper() }}</div>
+      <div class="profile-info">
+        <h1 class="profile-name">{{ profile_user.username }}</h1>
+        {% if profile_user.bio %}
+          <p class="profile-bio">{{ profile_user.bio }}</p>
+        {% endif %}
+        <div class="profile-roles">
+          {% for r in profile_user.roles %}
+            <span class="role-badge role-{{ r }}">{{ r }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="profile-actions">
+        {% if current_user and current_user.username != profile_user.username %}
+          <button class="btn-primary follow-btn {% if is_following %}following{% endif %}"
+                  data-username="{{ profile_user.username }}">
+            {{ 'Following' if is_following else 'Follow' }}
+          </button>
+        {% elif current_user and current_user.username == profile_user.username %}
+          <a href="{{ url_for('users.settings') }}" class="btn-ghost">Edit profile</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="profile-stats-row">
+      <div class="stat"><span class="stat-num">{{ stats.openings }}</span><span class="stat-label">Openings</span></div>
+      <div class="stat"><span class="stat-num">{{ stats.continuations }}</span><span class="stat-label">Continuations</span></div>
+      <div class="stat"><span class="stat-num">{{ stats.endings }}</span><span class="stat-label">Endings</span></div>
+      <div class="stat"><span class="stat-num">{{ stats.total_likes }}</span><span class="stat-label">Likes received</span></div>
+      <div class="stat"><span class="stat-num">{{ stats.followers }}</span><span class="stat-label">Followers</span></div>
+      <div class="stat"><span class="stat-num">{{ stats.following }}</span><span class="stat-label">Following</span></div>
+    </div>
+
+    <!-- Stories -->
+    <h2 class="section-heading">Published passages</h2>
+
+    {% if stories %}
+    <div class="story-list">
+      {% for s in stories %}
+      <div class="story-row">
+        <div class="story-row-left">
+          <span class="kind-badge kind-{{ s.kind }}">{{ s.kind_label }}</span>
+          <a href="{{ url_for('stories.view', story_id=s.id) }}" class="story-row-title">{{ s.title }}</a>
+        </div>
+        <div class="story-row-right">
+          <span>♥ {{ s.like_count }}</span>
+          <span>👁 {{ s.view_count }}</span>
+          <span class="story-row-age">{{ s.age }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">No public passages yet.</p>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

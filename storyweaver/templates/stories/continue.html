@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Continue · {{ parent.title }}{% endblock %}
+
+{% block content %}
+<div class="write-layout">
+  <div class="write-panel">
+
+    <!-- Ancestor path -->
+    <div class="ancestor-trail">
+      <h2 class="trail-title">{{ parent.title }}</h2>
+      {% for a in ancestors %}
+      <div class="trail-passage">
+        <div class="trail-author">
+          <span class="trail-num roman">{{ loop.index }}</span>
+          by <a href="{{ url_for('users.profile', username=a.author_name) }}">{{ a.author_name }}</a>
+        </div>
+        <p class="trail-text">{{ a.text }}</p>
+      </div>
+      {% endfor %}
+      <div class="trail-passage trail-parent">
+        <div class="trail-author">
+          <span class="trail-num roman">{{ ancestors|length + 1 }}</span>
+          by <a href="{{ url_for('users.profile', username=parent.author_name) }}">{{ parent.author_name }}</a>
+          <span class="trail-badge">← you are continuing this</span>
+        </div>
+        <p class="trail-text">{{ parent.text }}</p>
+      </div>
+    </div>
+
+    <h1 class="write-title">Continue the Story</h1>
+
+    <form method="post" action="{{ url_for('stories.continue_story', story_id=parent.id) }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="field{% if errors.text %} has-error{% endif %}">
+        <label for="text">
+          Your Passage
+          <span class="word-counter" id="word-counter">0 words</span>
+        </label>
+        <textarea id="text" name="text" rows="12" required
+                  placeholder="Continue from where the last passage ends… (20–5,000 characters)"
+                  data-draft="continue-{{ parent.id }}">{{ form_data.text if form_data else '' }}</textarea>
+        <div class="counter-bar" id="counter-bar">
+          <span id="counter-label"></span>
+        </div>
+        {% if errors.text %}<span class="field-error">{{ errors.text }}</span>{% endif %}
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="kind">Passage Type</label>
+          <select id="kind" name="kind">
+            <option value="continuation" {% if not form_data or form_data.kind == 'continuation' %}selected{% endif %}>Continuation</option>
+            <option value="ending" {% if form_data and form_data.kind == 'ending' %}selected{% endif %}>Ending</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="visibility">Visibility</label>
+          <select id="visibility" name="visibility" {% if parent_is_private %}disabled{% endif %}>
+            {% if not parent_is_private %}
+            <option value="public" {% if form_data.visibility == 'public' %}selected{% endif %}>Public</option>
+            {% endif %}
+            <option value="private" {% if form_data.visibility == 'private' %}selected{% endif %}>Private</option>
+          </select>
+          {% if parent_is_private %}<span class="field-hint">Continuations of a private passage stay private.</span>{% endif %}
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Publish passage</button>
+        <a href="{{ url_for('stories.view', story_id=parent.id) }}" class="btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

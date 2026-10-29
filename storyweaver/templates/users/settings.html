@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="settings-layout">
+  <h1 class="page-title">Account Settings</h1>
+
+  <form method="post" action="{{ url_for('users.settings') }}" class="settings-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="field">
+      <label for="bio">Bio <span class="field-hint">(max 300 characters)</span></label>
+      <textarea id="bio" name="bio" rows="4" maxlength="300"
+                placeholder="Tell the archive about yourself…">{{ current_user.bio if current_user.bio else '' }}</textarea>
+    </div>
+
+    <div class="field">
+      <label for="default_visibility">Default Visibility for new passages</label>
+      <select id="default_visibility" name="default_visibility">
+        <option value="public" {% if current_user.default_visibility == 'public' %}selected{% endif %}>Public</option>
+        <option value="private" {% if current_user.default_visibility == 'private' %}selected{% endif %}>Private</option>
+      </select>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-primary">Save settings</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

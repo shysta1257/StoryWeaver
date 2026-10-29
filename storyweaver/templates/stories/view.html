@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}{{ story.title }}{% endblock %}
+
+{% block content %}
+<div class="view-layout">
+<div class="story-view">
+
+  <!-- Path trail -->
+  {% if ancestors %}
+  <nav class="path-trail" aria-label="Story path">
+    {% for a in ancestors %}
+      <a href="{{ url_for('stories.view', story_id=a.id) }}" class="trail-dot"
+         title="{{ a.first_line }}" aria-label="Passage {{ loop.index }}"></a>
+    {% endfor %}
+    <span class="trail-dot trail-current" title="Current passage"></span>
+  </nav>
+  {% endif %}
+
+  <!-- Passage header -->
+  <header class="passage-header">
+    <div class="passage-meta-top">
+      <span class="kind-badge kind-{{ story.kind }}">{{ story.kind_label }}</span>
+      <span class="genre-tag">{{ story.genre }}</span>
+      {% if story.depth > 0 %}
+        <span class="depth-badge">Depth {{ story.depth }}</span>
+      {% endif %}
+    </div>
+    <h1 class="passage-title">{{ story.title }}</h1>
+    <p class="passage-byline">
+      by <a href="{{ url_for('users.profile', username=story.author_name) }}">{{ story.author_name }}</a>
+      · {{ story.age }}{% if story.was_edited %} (edited){% endif %}
+      · {{ story.reading_time }} min read · {{ story.word_count }} words
+    </p>
+    {% if story.tags %}
+    <div class="passage-tags">
+      {% for t in story.tags %}<span class="tag-chip">{{ t }}</span>{% endfor %}
+    </div>
+    {% endif %}
+  </header>
+
+  <!-- Ancestor passages (numbered) -->
+  {% for a in ancestors %}
+  <div class="ancestor-passage">
+    <div class="passage-num roman">{{ loop.index }}</div>
+    <div class="passage-body">
+      <div class="passage-author-line">
+        <a href="{{ url_for('users.profile', username=a.author_name) }}">{{ a.author_name }}</a>
+      </div>
+      <p>{{ a.text }}</p>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- Current passage -->
+  <div class="current-passage">
+    {% if ancestors %}<div class="passage-num roman">{{ ancestors|length + 1 }}</div>{% endif %}
+    <div class="passage-body">
+      {% if ancestors %}
+        <div class="passage-author-line">
+          <a href="{{ url_for('users.profile', username=story.author_name) }}">{{ story.author_name }}</a>
+        </div>
+      {% endif %}
+      <div class="passage-text">{{ story.text }}</div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="passage-actions">
+    <button class="btn-action like-btn {% if liked %}liked{% endif %}"
+            data-story-id="{{ story.id }}"
+            data-action="like"
+            {% if not current_user %}disabled title="Sign in to like"{% endif %}>
+      <span class="like-icon">♥</span>
+      <span class="like-count">{{ story.like_count }}</span>
+    </button>
+
+    <button class="btn-action save-btn {% if saved %}saved{% endif %}"
+            data-story-id="{{ story.id }}"
+            data-action="save"
+            {% if not current_user %}disabled title="Sign in to bookmark"{% endif %}>
+      <span>{% if saved %}★ Saved{% else %}☆ Save{% endif %}</span>
+    </button>
+
+    <button class="btn-action copy-btn" data-copy="{{ request.url }}" title="Copy link">
+      🔗 Copy link
+    </button>
+
+    {% if (is_author or can_moderate) and not locked %}
+      <a href="{{ url_for('stories.edit', story_id=story.id) }}" class="btn-ghost btn-sm">Edit</a>
+      <form method="post" action="{{ url_for('stories.delete', story_id=story.id) }}" class="inline-form"
+            onsubmit="return confirm('Delete this passage? This cannot be undone.')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn-danger btn-sm">Delete</button>
+      </form>
+    {% elif is_author and locked %}
+      <span class="field-hint" title="Others have continued this passage">🔒 Locked — already continued</span>
+    {% endif %}
+
+    {% if can_moderate %}
+      <form method="post" action="{{ url_for('admin.unhide_story' if story.is_hidden else 'admin.hide_story', story_id=story.id) }}" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn-ghost btn-sm">{{ 'Restore' if story.is_hidden else 'Hide' }}</button>
+      </form>
+    {% endif %}
+
+    {% if current_user and not is_author %}
+      {% if reported %}
+        <span class="field-hint">⚑ Reported</span>
+      {% else %}
+      <form method="post" action="{{ url_for('stories.report', story_id=story.id) }}" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn-ghost btn-sm" title="Report this passage">⚑ Report</button>
+      </form>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <!-- Branches / Continue -->
+  {% if not story.is_ending %}
+  <div class="branches-section">
+    {% if branches %}
+    <h2 class="branches-heading">
+      The story continues in {{ branches|length }} direction{{ 's' if branches|length != 1 else '' }}
+    </h2>
+    <div class="branch-list">
+      {% for b in branches %}
+      <a href="{{ url_for('stories.view', story_id=b.id) }}" class="branch-card">
+        <div class="branch-letter">{{ ['A','B','C','D','E','F','G','H'][loop.index0] if loop.index0 < 8 else loop.index }}</div>
+        <div class="branch-content">
+          <div class="branch-author">{{ b.author_name }}</div>
+          <p class="branch-preview">{{ b.first_line }}</p>
+          <div class="branch-stats">
+            ♥ {{ b.like_count }} · ⸗ {{ b.branch_count }} {{ '· Ending' if b.is_ending else '' }}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="continue-cta">
+      {% if can_continue %}
+      <a href="{{ url_for('stories.continue_story', story_id=story.id) }}" class="btn-primary">
+        + Write a continuation
+      </a>
+      {% elif not current_user %}
+      <p><a href="{{ url_for('auth.login', next=request.path) }}">Sign in</a> to continue this story.</p>
+      {% endif %}
+      <a href="{{ url_for('stories.tree', story_id=story.id) }}" class="btn-ghost">
+        View story tree
+      </a>
+    </div>
+  </div>
+  {% else %}
+  <div class="ending-banner">
+    <p>✦ This is an ending. ✦</p>
+    <a href="{{ url_for('stories.view', story_id=story.doc['root_id']|string) }}" class="btn-ghost">
+      Read from the beginning
+    </a>
+    <a href="{{ url_for('stories.tree', story_id=story.id) }}" class="btn-ghost">View story tree</a>
+  </div>
+  {% endif %}
+
+  <!-- Sibling branches -->
+  {% if siblings %}
+  <div class="siblings-section">
+    <h3 class="siblings-heading">Other paths from this point</h3>
+    <div class="sibling-list">
+      {% for s in siblings %}
+      <a href="{{ url_for('stories.view', story_id=s.id) }}" class="sibling-pill">
+        {{ s.first_line|truncate(60) }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Comments -->
+  <section class="comments-section">
+    <h2 class="comments-heading">Comments</h2>
+
+    {% if story.doc.comments %}
+    <div class="comment-list">
+      {% for c in story.doc.comments %}
+      <div class="comment">
+        <div class="comment-header">
+          <a href="{{ url_for('users.profile', username=c.username) }}" class="comment-author">{{ c.username }}</a>
+          <span class="comment-age">{{ c.created_at | time_ago }}</span>
+        </div>
+        <p class="comment-text">{{ c.text }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="no-comments">No comments yet.</p>
+    {% endif %}
+
+    {% if 'comment' in perms %}
+    <form method="post" action="{{ url_for('stories.comment', story_id=story.id) }}" class="comment-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <textarea name="text" placeholder="Add a comment…" rows="3" maxlength="1000" required></textarea>
+      <button type="submit" class="btn-primary btn-sm">Post comment</button>
+    </form>
+    {% endif %}
+  </section>
+
+</div><!-- .story-view -->
+</div><!-- .view-layout -->
+{% endblock %}

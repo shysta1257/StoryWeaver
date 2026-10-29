@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Insights{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Archive Insights</h1>
+  <p class="page-subtitle">Analytics from the collective writing of this platform</p>
+</div>
+
+<div class="insights-grid">
+
+  <!-- Linear Regression -->
+  <section class="insight-card insight-full">
+    <h2 class="insight-heading">Opening Length vs. Continuations</h2>
+    <p class="insight-desc">Does writing a longer opening attract more continuations? A linear regression on all public story trees.</p>
+
+    {% if regression %}
+    <div class="regression-block">
+      <div class="reg-eq">
+        <span class="reg-label">Model:</span>
+        <code>continuations = {{ '%.4f'|format(regression.slope) }} × words + {{ '%.2f'|format(regression.intercept) }}</code>
+      </div>
+      <div class="reg-stats">
+        <div class="reg-stat"><span class="reg-num">{{ '%.3f'|format(regression.r) }}</span><span class="reg-name">r (correlation)</span></div>
+        <div class="reg-stat"><span class="reg-num">{{ '%.3f'|format(regression.r2) }}</span><span class="reg-name">r² (fit)</span></div>
+        <div class="reg-stat"><span class="reg-num">{{ regression.n }}</span><span class="reg-name">stories</span></div>
+        <div class="reg-stat"><span class="reg-num">{{ '%.0f'|format(regression.x_mean) }}</span><span class="reg-name">avg words</span></div>
+        <div class="reg-stat"><span class="reg-num">{{ '%.1f'|format(regression.y_mean) }}</span><span class="reg-name">avg continuations</span></div>
+      </div>
+
+      <!-- SVG regression scatter plot -->
+      <svg class="reg-svg" viewBox="0 0 480 260" role="img" aria-label="Regression scatter plot">
+        <!-- Axes -->
+        <line x1="50" y1="220" x2="460" y2="220" stroke="#5a5040" stroke-width="1"/>
+        <line x1="50" y1="20" x2="50" y2="220" stroke="#5a5040" stroke-width="1"/>
+        <!-- Axis labels -->
+        <text x="255" y="248" text-anchor="middle" fill="#8b7d6b" font-size="11" font-family="EB Garamond, serif">Opening word count</text>
+        <text x="16" y="125" text-anchor="middle" fill="#8b7d6b" font-size="11" font-family="EB Garamond, serif" transform="rotate(-90,16,125)">Continuations</text>
+        <!-- Regression line annotation -->
+        <text x="380" y="36" fill="#c9a84c" font-size="10" font-family="EB Garamond, serif">
+          {% if regression.r2 > 0.3 %}Strong fit{% elif regression.r2 > 0.1 %}Moderate fit{% else %}Weak fit{% endif %}
+        </text>
+        <text x="380" y="48" fill="#c9a84c" font-size="10" font-family="EB Garamond, serif">r² = {{ '%.3f'|format(regression.r2) }}</text>
+        <!-- Axis ticks -->
+        {% set ch = regression.chart %}
+        <text x="50" y="234" text-anchor="middle" fill="#8b7d6b" font-size="9">0</text>
+        <text x="460" y="234" text-anchor="middle" fill="#8b7d6b" font-size="9">{{ ch.x_max }}</text>
+        <text x="44" y="223" text-anchor="end" fill="#8b7d6b" font-size="9">0</text>
+        <text x="44" y="24" text-anchor="end" fill="#8b7d6b" font-size="9">{{ '%.0f'|format(ch.y_max) }}</text>
+        <!-- Data points -->
+        {% for d in ch.dots %}
+          <circle cx="{{ '%.1f'|format(d.cx) }}" cy="{{ '%.1f'|format(d.cy) }}" r="4" fill="#8ab4c8" opacity="0.8">
+            <title>{{ d.x }} words → {{ d.y }} continuation{{ 's' if d.y != 1 else '' }}</title>
+          </circle>
+        {% endfor %}
+        <!-- Fitted regression line -->
+        <line x1="{{ '%.1f'|format(ch.line.x1) }}" y1="{{ '%.1f'|format(ch.line.y1) }}"
+              x2="{{ '%.1f'|format(ch.line.x2) }}" y2="{{ '%.1f'|format(ch.line.y2) }}"
+              stroke="#c9a84c" stroke-width="1.5" stroke-dasharray="6,3"/>
+      </svg>
+    </div>
+    {% else %}
+    <p class="insight-empty">Not enough data yet (need at least 3 stories). Keep writing!</p>
+    {% endif %}
+  </section>
+
+  <!-- Writer Clusters -->
+  <section class="insight-card insight-full">
+    <h2 class="insight-heading">Writer Clusters</h2>
+    <p class="insight-desc">k-means clustering (k=3) of all writers by number of openings and continuations written.</p>
+
+    {% if clusters %}
+    <div class="clusters-layout">
+      <div class="cluster-groups">
+        {% for grp in clusters.groups %}
+        <div class="cluster-group">
+          <h3 class="cluster-name">{{ grp.name }}</h3>
+          <p class="cluster-blurb">{{ grp.blurb }}</p>
+          <p class="cluster-centroid">Centroid: ({{ '%.1f'|format(grp.centroid[0]) }} openings, {{ '%.1f'|format(grp.centroid[1]) }} continuations)</p>
+          <div class="cluster-members">
+            {% for m in grp.members %}
+              <a href="{{ url_for('users.profile', username=m) }}" class="member-chip">{{ m }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Scatter plot SVG -->
+      <svg class="cluster-svg" viewBox="0 0 300 260" role="img" aria-label="Writer cluster scatter plot">
+        <line x1="40" y1="220" x2="280" y2="220" stroke="#5a5040" stroke-width="1"/>
+        <line x1="40" y1="20" x2="40" y2="220" stroke="#5a5040" stroke-width="1"/>
+        <text x="160" y="248" text-anchor="middle" fill="#8b7d6b" font-size="10" font-family="EB Garamond, serif">Openings</text>
+        <text x="14" y="125" text-anchor="middle" fill="#8b7d6b" font-size="10" font-family="EB Garamond, serif" transform="rotate(-90,14,125)">Continuations</text>
+        <text x="40" y="234" text-anchor="middle" fill="#8b7d6b" font-size="9">0</text>
+        <text x="280" y="234" text-anchor="middle" fill="#8b7d6b" font-size="9">{{ clusters.x_max }}</text>
+        <text x="34" y="24" text-anchor="end" fill="#8b7d6b" font-size="9">{{ clusters.y_max }}</text>
+        {% set colors = ['#c9a84c', '#8aa86c', '#a87c6c'] %}
+        {% for pt in clusters.points %}
+          <circle cx="{{ '%.1f'|format(pt.cx) }}" cy="{{ '%.1f'|format(pt.cy) }}" r="5"
+                  fill="{{ colors[pt.c % 3] }}" opacity="0.8">
+            <title>{{ pt.u }}: {{ pt.x }} openings, {{ pt.y }} continuations</title>
+          </circle>
+        {% endfor %}
+      </svg>
+    </div>
+    {% else %}
+    <p class="insight-empty">Not enough writers yet for clustering.</p>
+    {% endif %}
+  </section>
+
+  <!-- Genre Breakdown -->
+  <section class="insight-card">
+    <h2 class="insight-heading">Genre Breakdown</h2>
+    {% if genre_counts %}
+    <div class="genre-bars">
+      {% set max_count = genre_counts[0].count %}
+      {% for gc in genre_counts %}
+      <div class="genre-bar-row">
+        <span class="genre-bar-label">{{ gc._id or 'Uncategorised' }}</span>
+        <div class="genre-bar-track">
+          <div class="genre-bar-fill" style="width: {{ (gc.count / max_count * 100) | round }}%"></div>
+        </div>
+        <span class="genre-bar-count">{{ gc.count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="insight-empty">No stories yet.</p>
+    {% endif %}
+  </section>
+
+  <!-- Top Writers -->
+  <section class="insight-card">
+    <h2 class="insight-heading">Top Writers by Likes</h2>
+    {% if top_writers %}
+    <ol class="top-writers-list">
+      {% for w in top_writers %}
+      <li class="top-writer">
+        <span class="tw-rank">{{ loop.index }}</span>
+        <a href="{{ url_for('users.profile', username=w.username) }}" class="tw-name">{{ w.username }}</a>
+        <span class="tw-likes">♥ {{ w.total_likes }}</span>
+        <span class="tw-passages">{{ w.passages }} passage{{ 's' if w.passages != 1 else '' }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="insight-empty">No data yet.</p>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

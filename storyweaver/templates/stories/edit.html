@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Edit · {{ story.title }}{% endblock %}
+
+{% block content %}
+<div class="write-layout">
+  <div class="write-panel">
+    <h1 class="write-title">Edit Passage</h1>
+
+    <form method="post" action="{{ url_for('stories.edit', story_id=story.id) }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      {% if story.is_opening %}
+      <div class="field{% if errors.title %} has-error{% endif %}">
+        <label for="title">Story Title</label>
+        <input id="title" name="title" type="text" value="{{ form_data.title }}" required maxlength="120">
+        {% if errors.title %}<span class="field-error">{{ errors.title }}</span>{% endif %}
+      </div>
+      {% endif %}
+
+      <div class="field{% if errors.text %} has-error{% endif %}">
+        <label for="text">
+          Passage Text
+          <span class="word-counter" id="word-counter">{{ story.word_count }} words</span>
+        </label>
+        <textarea id="text" name="text" rows="14" required
+                  data-draft="edit-{{ story.id }}">{{ form_data.text }}</textarea>
+        <div class="counter-bar" id="counter-bar">
+          <span id="counter-label"></span>
+        </div>
+        {% if errors.text %}<span class="field-error">{{ errors.text }}</span>{% endif %}
+      </div>
+
+      {% if story.is_opening %}
+      <div class="field-row">
+        <div class="field">
+          <label for="genre">Genre</label>
+          <select id="genre" name="genre">
+            {% for g in genres %}
+              <option value="{{ g }}" {% if form_data.genre == g %}selected{% endif %}>{{ g }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="tags">Tags</label>
+          <input id="tags" name="tags" type="text"
+                 value="{{ form_data.tags }}" maxlength="200">
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="field">
+        <label for="visibility">Visibility</label>
+        <select id="visibility" name="visibility">
+          <option value="public" {% if form_data.visibility == 'public' %}selected{% endif %}>Public</option>
+          <option value="private" {% if form_data.visibility == 'private' %}selected{% endif %}>Private</option>
+        </select>
+      </div>
+
+      <div class="field-hint-block">
+        ⚠ Making a passage private also makes every continuation below it private.
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Save changes</button>
+        <a href="{{ url_for('stories.view', story_id=story.id) }}" class="btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

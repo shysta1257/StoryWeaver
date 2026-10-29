@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Story Tree · {{ root.title }}{% endblock %}
+
+{% block content %}
+<div class="tree-page">
+  <div class="tree-header">
+    <h1 class="page-title">{{ root.title }}</h1>
+    <p class="page-subtitle">Story tree — {{ node_count }} passage{{ 's' if node_count != 1 else '' }}</p>
+    <a href="{{ url_for('stories.view', story_id=root.id) }}" class="btn-ghost">← Read from start</a>
+  </div>
+
+  <div class="tree-container" id="tree-container"
+       data-story-id="{{ root.id }}"
+       data-current-id="{{ current_id }}">
+    <div class="tree-loading">Loading story tree…</div>
+  </div>
+
+  <div class="tree-legend">
+    <span class="legend-item"><span class="legend-dot dot-opening"></span> Opening</span>
+    <span class="legend-item"><span class="legend-dot dot-continuation"></span> Continuation</span>
+    <span class="legend-item"><span class="legend-dot dot-ending"></span> Ending</span>
+    <span class="legend-item"><span class="legend-dot dot-current"></span> Viewing</span>
+  </div>
+</div>
+{% endblock %}
