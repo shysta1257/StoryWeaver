@@ -21,7 +21,6 @@
     <div class="nav-links">
       <a href="{{ url_for('stories.explore') }}">Explore</a>
       <a href="{{ url_for('stories.random_opening') }}">Random</a>
-      <a href="{{ url_for('insights.insights') }}">Insights</a>
       {% if current_user %}
         <a href="{{ url_for('stories.write') }}" class="btn-nav">+ Write</a>
         <a href="{{ url_for('users.dashboard') }}">Dashboard</a>

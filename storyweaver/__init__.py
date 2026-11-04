@@ -34,14 +34,12 @@ def create_app(test_config=None):
     from .routes.stories import bp as stories_bp
     from .routes.users import bp as users_bp
     from .routes.api import bp as api_bp
-    from .routes.insights import bp as insights_bp
     from .routes.admin import bp as admin_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(stories_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(api_bp)
-    app.register_blueprint(insights_bp)
     app.register_blueprint(admin_bp)
 
     # Home route

@@ -19,7 +19,6 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production")
 from storyweaver import create_app
 from storyweaver.schema import init_database, TEXT_MIN, TEXT_MAX
 from storyweaver.models import count_words, Story
-from storyweaver.routes.insights import linear_regression, writer_clusters
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -123,13 +122,6 @@ class TC02_PublicPages(unittest.TestCase):
             with self.app.app_context():
                 init_database(self.app.db, verbose=False)
             resp = self.client.get("/stories/explore")
-            self.assertEqual(resp.status_code, 200)
-
-    def test_insights_200(self):
-        with mongomock.patch(servers=(("localhost", 27017),)):
-            with self.app.app_context():
-                init_database(self.app.db, verbose=False)
-            resp = self.client.get("/insights")
             self.assertEqual(resp.status_code, 200)
 
     def test_login_page_200(self):
@@ -365,72 +357,6 @@ class TC08_CSRF(unittest.TestCase):
         h = hash_password("secret99")
         self.assertTrue(verify_password("secret99", h))
         self.assertFalse(verify_password("wrong", h))
-
-
-# ── TC09: Insights mathematics ────────────────────────────────────────────────
-
-class TC09_InsightsMaths(unittest.TestCase):
-
-    def test_linear_regression_known_values(self):
-        """Regression on a perfect y=2x line should give slope≈2, r≈1."""
-        app = make_app()
-        with mongomock.patch(servers=(("localhost", 27017),)):
-            with app.app_context():
-                db = app.db
-                init_database(db, verbose=False)
-                from bson import ObjectId
-                from datetime import datetime, timezone
-                uid = ObjectId()
-                now = datetime.now(timezone.utc)
-                db.users.insert_one({
-                    "_id": uid, "username": "regruser", "email": "r@test.com",
-                    "password_hash": "x", "roles": ["writer"], "bio": "",
-                    "bookmarks": [], "following": [], "followers": [],
-                    "default_visibility": "public", "created_at": now,
-                })
-                # Insert 5 trees: opening word_count 10,20,30,40,50
-                # continuations 2,4,6,8,10 (perfect 2x relationship)
-                for i, (wc, nc) in enumerate([(10,2),(20,4),(30,6),(40,8),(50,10)]):
-                    root = ObjectId()
-                    db.stories.insert_one({
-                        "_id": root, "title": f"Story {i}", "text": "x " * wc,
-                        "kind": "opening", "parent_id": None, "root_id": root,
-                        "ancestors": [], "depth": 0, "author_id": uid,
-                        "genre": "Mystery", "tags": [], "visibility": "public",
-                        "status": "active",
-                        "stats": {"continuations": 0, "likes": 0, "views": 0},
-                        "liked_by": [], "reported_by": [], "comments": [],
-                        "word_count": wc, "created_at": now, "updated_at": now,
-                    })
-                    # Insert nc continuation stubs
-                    for j in range(nc):
-                        cid = ObjectId()
-                        db.stories.insert_one({
-                            "_id": cid, "title": f"Story {i}", "text": "y " * 25,
-                            "kind": "continuation", "parent_id": root, "root_id": root,
-                            "ancestors": [root], "depth": 1, "author_id": uid,
-                            "genre": "Mystery", "tags": [], "visibility": "public",
-                            "status": "active",
-                            "stats": {"continuations": 0, "likes": 0, "views": 0},
-                            "liked_by": [], "reported_by": [], "comments": [],
-                            "word_count": 25, "created_at": now, "updated_at": now,
-                        })
-
-                result = linear_regression(db)
-                self.assertIsNotNone(result)
-                self.assertAlmostEqual(result["slope"], 0.2, places=4)
-                self.assertAlmostEqual(result["r"], 1.0, places=4)
-                self.assertEqual(result["n"], 5)
-
-    def test_linear_regression_insufficient_data(self):
-        """Fewer than 3 stories → regression returns None."""
-        app = make_app()
-        with mongomock.patch(servers=(("localhost", 27017),)):
-            with app.app_context():
-                db = app.db
-                init_database(db, verbose=False)
-                result = linear_regression(db)
-                self.assertIsNone(result)
 
 
 # ── TC10: Story model properties ──────────────────────────────────────────────
